@@ -36,18 +36,22 @@ def measures_available():
        - Exception: raised when any unexpected exception happens
 
     """
-    from ftplib import FTP
+    from ftplib import FTP_TLS
     import socket
 
     from casaconfig import RemoteError
 
     files = []
     try:
-        ftp = FTP('ftp.astron.nl')
-        rc = ftp.login()
-        rc = ftp.cwd('outgoing/Measures')
-        files = ftp.nlst()
-        ftp.quit()
+        ftps = FTP_TLS('ftp.astron.nl')
+        # this doesn't work
+        # rc = ftps.login()
+        # but this does, go figure
+        rc = ftps.sendcmd('USER anonymous')
+        rc = ftps.sendcmd('PASS anonymous')
+        rc = ftps.cwd('outgoing/Measures')
+        files = ftps.nlst()
+        ftps.quit()
         #files = [ff.replace('WSRT_Measures','').replace('.ztar','').replace('_','') for ff in files]
         files = [ff for ff in files if (len(ff) > 0) and (not ff.endswith('.dat'))]
     except socket.gaierror as gaierr:

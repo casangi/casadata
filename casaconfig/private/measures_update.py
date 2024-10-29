@@ -129,7 +129,7 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     from datetime import datetime
     import sys
 
-    from ftplib import FTP
+    from ftplib import FTP_TLS
     import tarfile
     import re
     import ssl
@@ -289,10 +289,14 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
             print_log_messages('  ... connecting to ftp.astron.nl ...', logger)
 
             clean_lock = False
-            ftp = FTP('ftp.astron.nl')
-            rc = ftp.login()
-            rc = ftp.cwd('outgoing/Measures')
-            files = sorted([ff for ff in ftp.nlst() if (len(ff) > 0) and (not ff.endswith('.dat')) and (ftp.size(ff) > 0)])
+            ftps = FTP_TLS('ftp.astron.nl')
+            # this doesn't work
+            # rc = ftps.login()
+            # but this does - go figure
+            rc = ftps.sendcmd('USER anonymous')
+            rc = ftps.sendcmd('PASS anonymous')
+            rc = ftps.cwd('outgoing/Measures')
+            files = sorted([ff for ff in ftps.nlst() if (len(ff) > 0) and (not ff.endswith('.dat')) and (ftps.size(ff) > 0)])
 
             # target filename to download
             # for the non-force unspecified version case this can only get here if the age is > 1 day so there should be a newer version
@@ -309,9 +313,9 @@ def measures_update(path=None, version=None, force=False, logger=None, auto_upda
     
                 with open(ztarPath, 'wb') as fid:
                     print_log_messages('  ... downloading %s from ASTRON server to %s ...' % (target, path), logger)
-                    ftp.retrbinary('RETR ' + target, fid.write)
+                    ftps.retrbinary('RETR ' + target, fid.write)
 
-                ftp.close()
+                ftps.close()
 
                 # remove any existing measures readme.txt now in case something goes wrong during extraction
                 readme_path = os.path.join(path,'geodetic/readme.txt')
